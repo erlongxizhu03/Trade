@@ -1,0 +1,6 @@
+Manifest-Version: 1.0
+Main-Class: com.example.Start
+Class-Path: lib/net.sf.sociaal:freetts:1.2.2 lib/org.java-websocket:Jave
+ -WebSocket:1.5.2 lib/com.google.code.gson:gson:2.8.6 lib/org.slf4j:slf4
+ j-api:1.7.25
+

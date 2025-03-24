@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Main-Class: com.example.Start
+Class-Path: lib/gson-2.8.6.jar lib/slf4j-api-1.7.25.jar lib/freetts-1.2.
+ 2.jar lib/Java-W ebSocket-1.5.2.jar
+
