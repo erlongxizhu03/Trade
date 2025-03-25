@@ -13,16 +13,18 @@
             <artifactId>Java-WebSocket</artifactId>
             <version>1.5.2</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.mobicents.external.freetts/freetts -->
         <dependency>
-            <groupId>net.sf.sociaal</groupId>
+            <groupId>org.mobicents.external.freetts</groupId>
             <artifactId>freetts</artifactId>
-            <version>1.2.2</version>
+            <version>1.0</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.8.6</version>
         </dependency>
+
     </dependencies>
 
     <properties>
@@ -48,5 +50,11 @@
                 </configuration>
             </plugin>
         </plugins>
+        <resources>
+            <resource>
+                <directory>src/main/python</directory> <!-- 指定资源目录 -->
+                <targetPath>../src/main/python/</targetPath> <!-- 指定在jar中的路径 -->
+            </resource>
+        </resources>
     </build>
 </project>
