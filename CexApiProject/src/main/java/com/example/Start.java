@@ -5,6 +5,9 @@ import com.google.gson.JsonParser;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -139,6 +142,16 @@ public class Start {
     }
 
     public static void showMsg(String msg) {
+        Timer timer = new Timer(4000, new ActionListener() { // 3000毫秒后执行
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // 关闭弹出框
+                JOptionPane.getRootFrame().dispose();
+            }
+        });
+        timer.setRepeats(false); // 只执行一次
+        timer.start();
+        
         JOptionPane.showMessageDialog(null, msg, "提示", JOptionPane.INFORMATION_MESSAGE);
 //        Font font = new Font("微软雅黑", Font.PLAIN, 12);
 //        UIManager.put("OptionPane.messageFont", font);
