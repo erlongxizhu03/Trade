@@ -1,25 +1,23 @@
 package com.example;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.sun.speech.freetts.Voice;
+import com.sun.speech.freetts.VoiceManager;
+
 import javax.swing.*;
 import java.awt.*;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
-
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.sun.speech.freetts.Voice;
-import com.sun.speech.freetts.VoiceManager;
 
 /**
  * @Description TODO
@@ -34,20 +32,32 @@ public class Start {
     private static int timeLen1 = 300;
     //对照时间范围，秒，1小时变化率。超过1小时的删除。
     private static int timeLen2 = 1200;
-    //触发提示的变化率, 可用前边*根k线 开盘收盘差的均值 代替
+    //触发提示的变化率（0.01，波动1%会提示）, 可用前边*根k线 开盘收盘差的均值 代替
     private static float triggerRate = 0.01F;
     //触发提示的变化率, 可用前边*根k线 开盘收盘差的均值 代替
     private static float triggerRate2 = 0.01204F;
     static Map<Integer, Float> map = new HashMap<>();
     static SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
+    static boolean isSendEmail = true;
+
     public static void main(String[] args) {
+        readStr("hello world!");
+
+
         Font font = new Font("微软雅黑", Font.PLAIN, 12);
         UIManager.put("OptionPane.messageFont", font);
         UIManager.put("OptionPane.buttonFont", font);
         UIManager.put("OptionPane.inputFont", font);
-
+        //必要条件(管住手，交易是等待的艺术，尽量不开单)：
+        //1.没达指标不开单（否则容易被咬住）【指标2-3个：RSI/MACD/5分钟内波动率/斐波那契布林带】
+        //2.第一手仓位控制==本金大小（千万不能all in）
+        //3.开第一单后，第二单至少间隔的点数（不低于500点，降低交易频率，毛刺大一点）
+        //4.没走出形态时该认错认错，可以亏小钱
+        //5.盈利300点就走（剥头皮，合约不格局）
+        int i = 0;
         while (true) {
+            i++;
             try {
                 String response = lNFiGet();
 //              System.out.println(response.toString());
@@ -57,7 +67,7 @@ public class Start {
                 float tag_price = jsonObject.get("data").getAsJsonArray().get(0).getAsJsonObject().get("tag_price").getAsFloat();
 
                 String ctime = formatter.format(new Date());
-                System.out.printf(ctime + "， price=====%s, tag_price=====%s\n", String.format("%.2f", price), String.format("%.2f", tag_price));
+                System.out.printf(i +"、"+ctime + "， price=====%s, tag_price=====%s\n", String.format("%.2f", price), String.format("%.2f", tag_price));
                 int systemTime = (int) (System.currentTimeMillis() / 1000);
                 int key = systemTime - systemTime % 10;
                 map.put(key, price);
@@ -73,6 +83,7 @@ public class Start {
                     if (Math.abs(changeRate) > Math.abs(triggerRate)) {
                         System.out.println(ctime + "， 剧烈变化：" + timeLen1 / 60 + "分钟内涨跌" + String.format("%.4f", changeRate));
                         String type = changeRate > 0 ? "空" : "多";
+                        readStr("BTC剧烈波动，可以" + type + "，当前价格：" + String.format("%.2f", tag_price));
                         showMsg("BTC剧烈波动，可以" + type + "，当前价格：" + String.format("%.2f", tag_price));
                     } else {
                         System.out.println(ctime + " " + timeLen1 / 60 + "分钟内涨跌" + String.format("%.4f", changeRate));
@@ -81,23 +92,46 @@ public class Start {
                 } else {
                     System.out.println(",preI==" + preI + ",key==" + key + ",preKey1==" + preKey1 + ",dicLen:" + map.size());
                 }
-
+                int deledKey2 = key-timeLen2; //超过timeLen2的删掉
+                map.remove(deledKey2); //
                 //急跌买入
                 //CD时间不开单
                 //抢收盘价
-                if (tag_price < 86024f) {
+                if (tag_price < 86524f) {
                     System.out.println("牌来了，可以开多");
+                    readStr("牌来了，可以开long：" + String.format("%.2f", tag_price));
                     showMsg("牌来了，可以开long：" + String.format("%.2f", tag_price));
                 }
 
-                if (tag_price > 87464) {
+                if (tag_price > 89464) {
                     System.out.println("牌来了，可以平多");
+                    readStr("牌来了，可以开short：" + String.format("%.2f", tag_price));
                     showMsg("牌来了，可以开short：" + String.format("%.2f", tag_price));
                 }
                 Thread.sleep(4000);
-            } catch (InterruptedException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
+        }
+    }
+        /** 字符串文本阅读
+         * @param str 要读的文字字符串
+         */
+    public static void readStr(String str){
+        try {
+            String[] command = {"python", "src/main/python/sayText.py", str};
+            Process process = Runtime.getRuntime().exec(command);
+            BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            while ((line = in.readLine()) != null) {
+                System.out.println(line);
+            }
+            if (isSendEmail) {
+                String[] commandEmail = {"python", "src/main/python/sendEmail.py", str};
+                Runtime.getRuntime().exec(commandEmail);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -107,23 +141,6 @@ public class Start {
 //        UIManager.put("OptionPane.messageFont", font);
     }
 
-    public static void textToSound() {
-        try {
-//            boolean bool = VoiceManager.getInstance().contains("kevin");
-//            boolean male = VoiceManager.getInstance().contains("male");
-//            boolean female = VoiceManager.getInstance().contains("female");
-//            boolean bool16 = VoiceManager.getInstance().contains("kevin16");
-            Voice[] voices = VoiceManager.getInstance().getVoices();
-            Voice voice = VoiceManager.getInstance().getVoice("kevin16");
-            String text = "Hello, welcome to the world of text to speech conversion!";
-            if (voice != null) {
-                voice.allocate();
-                voice.speak(text);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
     public static String lNFiGet() {
         try {
