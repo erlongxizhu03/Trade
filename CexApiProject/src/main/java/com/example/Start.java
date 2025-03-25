@@ -2,17 +2,15 @@ package com.example;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.sun.speech.freetts.Voice;
-import com.sun.speech.freetts.VoiceManager;
 
 import javax.swing.*;
 import java.awt.*;
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -39,7 +37,8 @@ public class Start {
     static Map<Integer, Float> map = new HashMap<>();
     static SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    static boolean isSendEmail = true;
+    //是否发邮件控制
+    static boolean isSendEmail = false;
 
     public static void main(String[] args) {
         readStr("hello world!");
@@ -56,6 +55,8 @@ public class Start {
         //4.没走出形态时该认错认错，可以亏小钱
         //5.盈利300点就走（剥头皮，合约不格局）
         int i = 0;
+        NumberFormat percentInstance = NumberFormat.getPercentInstance();
+        percentInstance.setMinimumFractionDigits(2);
         while (true) {
             i++;
             try {
@@ -67,6 +68,7 @@ public class Start {
                 float tag_price = jsonObject.get("data").getAsJsonArray().get(0).getAsJsonObject().get("tag_price").getAsFloat();
 
                 String ctime = formatter.format(new Date());
+
                 System.out.printf(i +"、"+ctime + "， price=====%s, tag_price=====%s\n", String.format("%.2f", price), String.format("%.2f", tag_price));
                 int systemTime = (int) (System.currentTimeMillis() / 1000);
                 int key = systemTime - systemTime % 10;
@@ -81,23 +83,23 @@ public class Start {
                 if (preI != null) {
                     float changeRate = (price - preI) / preI;
                     if (Math.abs(changeRate) > Math.abs(triggerRate)) {
-                        System.out.println(ctime + "， 剧烈变化：" + timeLen1 / 60 + "分钟内涨跌" + String.format("%.4f", changeRate));
+                        System.out.println(ctime + "， 剧烈变化：" + timeLen1 / 60 + "分钟内涨跌：" + percentInstance.format(changeRate));
                         String type = changeRate > 0 ? "空" : "多";
-                        readStr("BTC剧烈波动，可以" + type + "，当前价格：" + String.format("%.2f", tag_price));
-                        showMsg("BTC剧烈波动，可以" + type + "，当前价格：" + String.format("%.2f", tag_price));
+                        readStr("BTC剧烈波动，可以" + type + "，当前价格：" + String.format("%.2f", tag_price) + "分钟内涨跌：" + percentInstance.format(changeRate));
+                        showMsg("BTC剧烈波动，可以" + type + "，当前价格：" + String.format("%.2f", tag_price) + "分钟内涨跌：" + percentInstance.format(changeRate));
                     } else {
-                        System.out.println(ctime + " " + timeLen1 / 60 + "分钟内涨跌" + String.format("%.4f", changeRate));
+                        System.out.println(ctime + " " + timeLen1 / 60 + "分钟内涨跌：" + percentInstance.format(changeRate));
                     }
 //                    System.out.println("5分钟前的价：" + preKey1 + ", " + preI + ",变化率：" + changeRate);
                 } else {
-                    System.out.println(",preI==" + preI + ",key==" + key + ",preKey1==" + preKey1 + ",dicLen:" + map.size());
+                    System.out.println("preI==" + preI + ",key==" + key + ",preKey1==" + preKey1 + ",dicLen:" + map.size());
                 }
                 int deledKey2 = key-timeLen2; //超过timeLen2的删掉
                 map.remove(deledKey2); //
                 //急跌买入
                 //CD时间不开单
                 //抢收盘价
-                if (tag_price < 86524f) {
+                if (tag_price < 86024f) {
                     System.out.println("牌来了，可以开多");
                     readStr("牌来了，可以开long：" + String.format("%.2f", tag_price));
                     showMsg("牌来了，可以开long：" + String.format("%.2f", tag_price));
@@ -119,6 +121,7 @@ public class Start {
          */
     public static void readStr(String str){
         try {
+            //写死，jar包所在服务器绝对路径也得有对应py
             String[] command = {"python", "src/main/python/sayText.py", str};
             Process process = Runtime.getRuntime().exec(command);
             BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream()));
