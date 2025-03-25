@@ -1,1 +1,1 @@
-version1：lnexchange获取对应btc价格。一定时间内波动率指标、固定价格指标，提示
+version1：lnexchange获取对应bitcoin价格。一定时间内波动率指标、固定价格指标，提示
