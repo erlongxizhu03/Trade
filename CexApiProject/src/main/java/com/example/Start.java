@@ -34,7 +34,7 @@ public class Start {
     //对照时间范围，秒，1小时变化率。超过1小时的删除。
     private static int timeLen2 = 1200;
     //触发提示的变化率（0.01，波动1%会提示）, 可用前边*根k线 开盘收盘差的均值 代替
-    private static float triggerRate = 0.01F;
+    private static float triggerRate = 0.004F;
     //触发提示的变化率, 可用前边*根k线 开盘收盘差的均值 代替
     private static float triggerRate2 = 0.01204F;
     static Map<Integer, Float> map = new HashMap<>();
@@ -45,6 +45,7 @@ public class Start {
 
     public static void main(String[] args) {
         readStr("hello world!");
+        showMsg("hello world!");
 
 
         Font font = new Font("微软雅黑", Font.PLAIN, 12);
@@ -142,6 +143,9 @@ public class Start {
     }
 
     public static void showMsg(String msg) {
+//        Font font = new Font("微软雅黑", Font.PLAIN, 12);
+//        UIManager.put("OptionPane.messageFont", font);
+        // 设置定时器来自动关闭对话框
         Timer timer = new Timer(4000, new ActionListener() { // 3000毫秒后执行
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -151,10 +155,17 @@ public class Start {
         });
         timer.setRepeats(false); // 只执行一次
         timer.start();
-        
-        JOptionPane.showMessageDialog(null, msg, "提示", JOptionPane.INFORMATION_MESSAGE);
-//        Font font = new Font("微软雅黑", Font.PLAIN, 12);
-//        UIManager.put("OptionPane.messageFont", font);
+//        JOptionPane.showMessageDialog(null, msg, "提示", JOptionPane.INFORMATION_MESSAGE);
+        JDialog dialog = new JDialog();
+        JOptionPane pane = new JOptionPane(msg);
+        pane.setMessageType(JOptionPane.INFORMATION_MESSAGE);
+        dialog.setContentPane(pane);
+        dialog.setModal(true);
+        dialog.setTitle("提示");
+        dialog.setAlwaysOnTop(true); // 确保弹窗始终在最顶层
+        dialog.pack();
+        dialog.setLocationRelativeTo(null); // 居中显示
+        dialog.setVisible(true);
     }
 
 
