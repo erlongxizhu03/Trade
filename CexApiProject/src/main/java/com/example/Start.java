@@ -9,6 +9,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -30,16 +31,18 @@ public class Start {
 
     //变化率波动大提醒
     //对照时间范围，休眠10秒的倍数（300s,5分钟变化率），15分钟的变化率。
-    private static int timeLen1 = 300;
+    private static int timeLen1 = 20;
     //对照时间范围，秒，1小时变化率。超过1小时的删除。
     private static int timeLen2 = 1200;
-    //触发提示的变化率（0.01，波动1%会提示）, 可用前边*根k线 开盘收盘差的均值 代替
-    private static float triggerRate = 0.004F;
+    //触发提示的变化率（0.01，波动1%会提示）, 可用前边*根k线 开盘收盘差的均值 代替，过小的波动率视为噪声不用关注
+    private static float triggerRate = 0.001F;
     //触发提示的变化率, 可用前边*根k线 开盘收盘差的均值 代替
     private static float triggerRate2 = 0.01204F;
     static Map<Integer, Float> map = new HashMap<>();
     static SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
+    //是否发邮件控制
+    static boolean isShowFram = true;
     //是否发邮件控制
     static boolean isSendEmail = false;
 
@@ -63,9 +66,17 @@ public class Start {
         percentInstance.setMinimumFractionDigits(2);
         while (true) {
             i++;
+//            String s = LNFiPostGetPublic();
+//            System.out.println(s);
             try {
+                int startTime = (int) (System.currentTimeMillis()/1000);
                 String response = lNFiGet();
+                if ("".equals(response)) {
+                    continue;
+                }
 //              System.out.println(response.toString());
+                int endTime = (int) (System.currentTimeMillis()/1000);
+                System.out.println("耗时"+(endTime - startTime)+"秒");
                 JsonObject jsonObject = JsonParser.parseString(response).getAsJsonObject();
 
                 float price = jsonObject.get("data").getAsJsonArray().get(0).getAsJsonObject().get("index_price").getAsFloat();
@@ -98,23 +109,30 @@ public class Start {
                 } else {
                     System.out.println("preI==" + preI + ",key==" + key + ",preKey1==" + preKey1 + ",dicLen:" + map.size());
                 }
-                int deledKey2 = key-timeLen2; //超过timeLen2的删掉
-                map.remove(deledKey2); //
+                if (i % 1000 == 0) {
+                    //超过timeLen2的删掉
+                    int deledKey2 = key-timeLen2;
+                    for (Integer keyItem : map.keySet()) {
+                        if (keyItem < deledKey2){
+                            map.remove(keyItem); //
+                        }
+                    }
+                }
                 //急跌买入
                 //CD时间不开单
                 //抢收盘价
-                if (tag_price < 86024f) {
+                if (tag_price < 82344f) {
                     System.out.println("牌来了，可以开多");
                     readStr("牌来了，可以开long：" + String.format("%.2f", tag_price));
                     showMsg("牌来了，可以开long：" + String.format("%.2f", tag_price));
                 }
 
-                if (tag_price > 89464) {
+                if (tag_price > 84464) {
                     System.out.println("牌来了，可以平多");
                     readStr("牌来了，可以开short：" + String.format("%.2f", tag_price));
                     showMsg("牌来了，可以开short：" + String.format("%.2f", tag_price));
                 }
-                Thread.sleep(4000);
+                Thread.sleep(10000);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -143,6 +161,9 @@ public class Start {
     }
 
     public static void showMsg(String msg) {
+        if (!isShowFram) {
+            return;
+        }
 //        Font font = new Font("微软雅黑", Font.PLAIN, 12);
 //        UIManager.put("OptionPane.messageFont", font);
         // 设置定时器来自动关闭对话框
@@ -155,23 +176,63 @@ public class Start {
         });
         timer.setRepeats(false); // 只执行一次
         timer.start();
-//        JOptionPane.showMessageDialog(null, msg, "提示", JOptionPane.INFORMATION_MESSAGE);
-        JDialog dialog = new JDialog();
-        JOptionPane pane = new JOptionPane(msg);
-        pane.setMessageType(JOptionPane.INFORMATION_MESSAGE);
-        dialog.setContentPane(pane);
-        dialog.setModal(true);
-        dialog.setTitle("提示");
-        dialog.setAlwaysOnTop(true); // 确保弹窗始终在最顶层
-        dialog.pack();
-        dialog.setLocationRelativeTo(null); // 居中显示
-        dialog.setVisible(true);
+        JOptionPane.showMessageDialog(null, msg, "提示", JOptionPane.INFORMATION_MESSAGE);
+//        JDialog dialog = new JDialog();
+//        JOptionPane pane = new JOptionPane(msg);
+//        pane.setMessageType(JOptionPane.INFORMATION_MESSAGE);
+//        dialog.setContentPane(pane);
+//        dialog.setModal(true);
+//        dialog.setTitle("提示");
+//        dialog.setAlwaysOnTop(true); // 确保弹窗始终在最顶层
+//        dialog.pack();
+//        dialog.setLocationRelativeTo(null); // 居中显示
+//        dialog.setVisible(true);
     }
 
 
     public static String lNFiGet() {
+        BufferedReader br = null;
         try {
             URL url = new URL("https://test-futures-api.ln.exchange/napi/market/public_all_index_tag_price?");
+//            URL url = new URL("https://test-futures-api.ln.exchange/napi/common/public_all_index_tag_price");
+            System.out.println("开始请求");
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            //get请求，参数直接在url后
+            con.setRequestMethod("GET");
+            con.setRequestProperty("Content-Type", "application/json");
+
+//            String urlParameters = "param1=" + URLEncoder.encode("value1", "UTF-8") + "&param2=" + URLEncoder.encode("value2", "UTF-8");
+//            try (OutputStream os = con.getOutputStream()) {
+//                byte[] input = urlParameters.getBytes(StandardCharsets.UTF_8);
+//                os.write(input, 0, input.length);
+//            }
+            con.setConnectTimeout(5000); // 设置连接超时时间为5000毫秒
+            con.setReadTimeout(5000); // 设置读取超时时间为5000毫秒
+            con.connect(); // 尝试连接
+            int responseCode = con.getResponseCode();
+            if (responseCode != 200) {
+                System.out.println("Response Code : " + responseCode);
+                return "";
+            }
+            System.out.println("Response Code : " + responseCode);
+            br = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuffer response = new StringBuffer();
+            while ((inputLine = br.readLine()) != null) {
+                response.append(inputLine);
+            }
+            System.out.println("请求结束");
+            br.close();
+            return response.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    public static String LNFiPostGetPublic() {
+        try {
+            URL url = new URL("https://test-futures-api.ln.exchange/napi/common/public_info");
 //            URL url = new URL("https://test-futures-api.ln.exchange/napi/common/public_info");
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             //get请求，参数直接在url后
@@ -199,7 +260,42 @@ public class Start {
         }
         return "";
     }
+    public static String LNFiPostDepth() {
+        try {
+            URL url = new URL("https://test-futures-api.ln.exchange/open/v1/depth");
 
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+
+            //post添加请求参数
+            con.setRequestMethod("POST");
+            con.setRequestProperty("Content-Type", "application/json");
+            con.setDoOutput(true); // 允许写入数据到服务器
+
+            // 获取输出流，用于写入JSON数据
+            try (OutputStream os = con.getOutputStream()) {
+                // JSON数据字符串
+                String jsonInputString = "{\"contractName\":\"TREAT-BTC-USDT\",\"limit\":\"100\"}";
+                // 将JSON字符串写入输出流
+                byte[] input = jsonInputString.getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+
+            int responseCode = con.getResponseCode();
+            System.out.println("Response Code : " + responseCode);
+            BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            String inputLine;
+            StringBuffer response = new StringBuffer();
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+            System.out.println(response.toString());
+            return response.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
     public static void LNFiPostCreatUser() {
         try {
             URL url = new URL("https://test-futures-api.ln.exchange/napi/user/create_user");
