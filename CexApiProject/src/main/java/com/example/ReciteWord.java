@@ -45,6 +45,7 @@ public class ReciteWord {
             }
             Scanner scanner = null;
             System.out.println("\u001B[31m根据音标输入对应的单词:\u001B[0m");
+            int index = 1;
             while (true) {
                 // 随机获取一个键值对(单词和释义
                 String word = getRandomKey(wordPhoneticMap);
@@ -62,11 +63,18 @@ public class ReciteWord {
                         //1 单词展示
                         System.out.println(word);
                     }else if ("2".equals(input)){
-                        //2 意思展示
+                        //1 意思展示
                         System.out.println(wordDefiMap.get(word));
                     }
                 }
-                System.out.println("\u001B[34m正确，"+word+" /"+randomValue+"/ \u001B[0m"+wordDefiMap.get(word)+",下一个：");
+                System.out.println(index+":\u001B[32m正确，"+word+" /"+randomValue+"/ \u001B[0m"+wordDefiMap.get(word)+"。");
+                //正确的不再随机
+                wordPhoneticMap.remove(word);
+                index++;
+                if (wordPhoneticMap.size()==0) {
+                    System.out.println("\u001B[31m"+index + "个单词结束\u001B[0m");
+                    break;
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
