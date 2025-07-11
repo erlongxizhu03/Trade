@@ -54,9 +54,10 @@ public class ReciteWord {
 
                 scanner = new Scanner(System.in);
                 String input = scanner.nextLine(); // 读取一行文本
-
+                boolean firstright = true;
                 while (input == null || !input.equals(word.toLowerCase())) {
                     System.out.println("\u001B[31m不正确，请再次输入,音标提示, \u001B[0m/"+randomValue+"/:");
+                    firstright = false;
                     scanner = new Scanner(System.in);
                     input = scanner.nextLine(); // 读取一行文本
                     if ("1".equals(input)) {
@@ -68,12 +69,14 @@ public class ReciteWord {
                     }
                 }
                 System.out.println(index+":\u001B[32m正确，"+word+" /"+randomValue+"/ \u001B[0m"+wordDefiMap.get(word)+"。");
-                //正确的不再随机
-                wordPhoneticMap.remove(word);
-                index++;
-                if (wordPhoneticMap.size()==0) {
-                    System.out.println("\u001B[31m"+index + "个单词结束\u001B[0m");
-                    break;
+                if (firstright) {
+                    //1次正确的不再随机
+                    wordPhoneticMap.remove(word);
+                    index++;
+                    if (wordPhoneticMap.size()==0) {
+                        System.out.println("\u001B[31m"+index + "个单词结束\u001B[0m");
+                        break;
+                    }
                 }
             }
         } catch (Exception e) {
