@@ -61,6 +61,9 @@ public class ReciteWord {
                     if ("1".equals(input)) {
                         //1 单词展示
                         System.out.println(word);
+                    }else if ("2".equals(input)){
+                        //2 意思展示
+                        System.out.println(wordDefiMap.get(word));
                     }
                 }
                 System.out.println("\u001B[34m正确，"+word+" /"+randomValue+"/ \u001B[0m"+wordDefiMap.get(word)+",下一个：");
