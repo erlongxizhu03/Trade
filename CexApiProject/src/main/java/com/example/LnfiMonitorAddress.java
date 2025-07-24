@@ -72,6 +72,7 @@ public class LnfiMonitorAddress {
                     int balanceLatest = jsonObject.get("data").getAsJsonObject().get("data").getAsJsonObject().get("balance").getAsInt();
                     if (balanceLatest != initLNAddressBalanceMap.get(entry.getKey())) {
                         Start.readStr("有LNFI address 出现余额变动：");
+                        System.out.println("有LNFI address 出现余额变动，balanceLatest:"+balanceLatest +",initBalance:"+initLNAddressBalanceMap.get(entry.getKey()));
                     }
                     Thread.sleep(10000);
                 }
