@@ -16,7 +16,7 @@ import java.util.Map;
  * @Date 2025/7/25 10:11
  */
 public class $LNAddressMonitor {
-    public static String LNAssetId = "";
+    public static String LNAssetId = "0f8b9bb57522a824746b2ce364ae606ad433bc36db66ab86756e0e156a1ed34d";
     /**
      * address、balance
      */
@@ -25,6 +25,33 @@ public class $LNAddressMonitor {
     public static void main(String[] args) {
         Map<String, String> addressOwner = new HashMap<>();
         initAddressOwner(addressOwner);
+        while (true) {
+            try {
+                String responseHolders = LNFiPostHolders(LNAssetId);
+                JsonObject jsonObjectHolders = JsonParser.parseString(responseHolders).getAsJsonObject();
+                JsonArray asJsonArray = jsonObjectHolders.get("data").getAsJsonObject().get("data").getAsJsonArray();
+                for (int i = 0; i < asJsonArray.size(); i++) {
+                    JsonObject asJsonObject = asJsonArray.get(i).getAsJsonObject();
+                    int balance = asJsonObject.get("balance").getAsInt();
+                    String owner = asJsonObject.get("owner").getAsString();
+//                    System.out.println("owner:" + owner + ", balance:" + balance);
+                    if (addressOwner.containsValue(owner)) {
+                        Start.readStr("有监听地址出进入LN的top25");
+                        System.out.println("owner:" + owner + ", balance:" + balance);
+                    }
+                }
+                Thread.sleep(60000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public static void main2(String[] args) {
+        String path = "E:\\init$LNAddressBalanceMap.txt";
+        Map<String, String> addressOwner = new HashMap<>();
+        initAddressOwner(addressOwner);
+
         //地址初始余额写入文件
 //        for (Map.Entry<String, String> entry : addressOwner.entrySet()) {
 //            try {
@@ -40,14 +67,16 @@ public class $LNAddressMonitor {
 //                throw new RuntimeException(e);
 //            }
 //        }
-//        writeMapToFile(initLNAddressBalanceMap, "E:\\init$LNAddressBalanceMap.txt");
-        System.out.println("文件写入完毕");
+//        writeMapToFile(initLNAddressBalanceMap, path);
+//        System.out.println("文件写入完毕");
+
+
         //读取初始余额历史记录
-        Map<String, Integer> stringStringMap = readMapFromFile("E:\\init$LNAddressBalanceMap.txt");
+        Map<String, Integer> stringStringMap = readMapFromFile(path);
         initLNAddressBalanceMap.putAll(stringStringMap);
         System.out.println("文件读取完毕");
         for (Map.Entry<String, Integer> stringIntegerEntry : initLNAddressBalanceMap.entrySet()) {
-            System.out.println("address："+stringIntegerEntry.getKey() +", balance:"+stringIntegerEntry.getValue());
+            System.out.println("address：" + stringIntegerEntry.getKey() + ", balance:" + stringIntegerEntry.getValue());
         }
         //查询第一页（余额最多，一页前25名）owner及余额
         Map<String, Integer> Top25OwnerBalanceMap = new HashMap<>();
@@ -66,14 +95,14 @@ public class $LNAddressMonitor {
         for (Map.Entry<String, Integer> monitorEntry : initLNAddressBalanceMap.entrySet()) {
             String owner = addressOwner.get(monitorEntry.getKey());
             if (!Top25OwnerBalanceMap.containsKey(owner)) {
-                System.out.println("此监听地址不在top,address=="+monitorEntry.getKey());
+                System.out.println("此监听地址不在top,address==" + monitorEntry.getKey());
             }
         }
         //top25中，有哪几个不在监听范围
         for (Map.Entry<String, Integer> top25Entry : Top25OwnerBalanceMap.entrySet()) {
             String top25Owner = top25Entry.getKey();
             if (!addressOwner.containsValue(top25Owner)) {
-                System.out.println("此top地址不在监听范围,Owner=="+top25Owner+",balance=="+top25Entry.getValue());
+                System.out.println("此top地址不在监听范围,Owner==" + top25Owner + ",balance==" + top25Entry.getValue());
             }
         }
 
@@ -86,7 +115,7 @@ public class $LNAddressMonitor {
                     int balanceLatest = jsonObject.get("data").getAsJsonObject().get("data").getAsJsonObject().get("balance").getAsInt();
                     if (balanceLatest != initLNAddressBalanceMap.get(entry.getKey())) {
                         Start.readStr("有LNFI address 出现余额变动");
-                        System.out.println("有LNFI address 出现余额变动，balanceLatest:"+balanceLatest +",initBalance:"+initLNAddressBalanceMap.get(entry.getKey())+",变化量:::::"+(balanceLatest-initLNAddressBalanceMap.get(entry.getKey())));
+                        System.out.println("有LNFI address 出现余额变动，balanceLatest:" + balanceLatest + ",initBalance:" + initLNAddressBalanceMap.get(entry.getKey()) + ",变化量:::::" + (balanceLatest - initLNAddressBalanceMap.get(entry.getKey())));
                     }
                     Thread.sleep(10000);
                 }
@@ -205,6 +234,7 @@ public class $LNAddressMonitor {
      * 0f8b9bb57522a824746b2ce364ae606ad433bc36db66ab86756e0e156a1ed34d【treat】
      * 475a642ed13bc44af6490c8571404988d7b514386cf8f3a603d04a0d2fa9f8f5【nostr】
      * a9b7c7367b9ad647651ff710a6b2ff9fa5c0d186b6eb2ff541eb4a98f6bbdd4b【burger】
+     *
      * @param owner
      * @return
      */
