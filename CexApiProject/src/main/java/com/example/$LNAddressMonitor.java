@@ -13,13 +13,13 @@ import java.util.Map;
 /**
  * @Description
  * @Author erlong.zhou
- * @Date 2025/7/24 12:16
+ * @Date 2025/7/25 10:11
  */
-public class LnfiMonitorAddress {
+public class $LNAddressMonitor {
     public static String LNAssetId = "";
-    public static String TreatAssetId = "0f8b9bb57522a824746b2ce364ae606ad433bc36db66ab86756e0e156a1ed34d";
-    public static String NostrAssetId = "475a642ed13bc44af6490c8571404988d7b514386cf8f3a603d04a0d2fa9f8f5";
-    public static String BurgerAssetId = "a9b7c7367b9ad647651ff710a6b2ff9fa5c0d186b6eb2ff541eb4a98f6bbdd4b";
+    /**
+     * address、balance
+     */
     public static Map<String, Integer> initLNAddressBalanceMap = new HashMap<>(36);//读取file
 
     public static void main(String[] args) {
@@ -29,7 +29,7 @@ public class LnfiMonitorAddress {
 //        for (Map.Entry<String, String> entry : addressOwner.entrySet()) {
 //            try {
 //                String owner = entry.getValue();
-//                String responseBalance = LNFiPostBalance(TreatAssetId, owner);
+//                String responseBalance = LNFiPostBalance(LNAssetId, owner);
 //                JsonObject jsonObject = JsonParser.parseString(responseBalance).getAsJsonObject();
 //                int balance = jsonObject.get("data").getAsJsonObject().get("data").getAsJsonObject().get("balance").getAsInt();
 //                System.out.println("address:" + entry.getKey() + ", owner:" + owner + ", balance:" + balance);
@@ -40,18 +40,18 @@ public class LnfiMonitorAddress {
 //                throw new RuntimeException(e);
 //            }
 //        }
-//        writeMapToFile(initLNAddressBalanceMap, "d:\\initLNAddressBalanceMap.txt");
+//        writeMapToFile(initLNAddressBalanceMap, "E:\\init$LNAddressBalanceMap.txt");
         System.out.println("文件写入完毕");
         //读取初始余额历史记录
-        Map<String, Integer> stringStringMap = readMapFromFile("d:\\initLNAddressBalanceMap.txt");
+        Map<String, Integer> stringStringMap = readMapFromFile("E:\\init$LNAddressBalanceMap.txt");
         initLNAddressBalanceMap.putAll(stringStringMap);
         System.out.println("文件读取完毕");
         for (Map.Entry<String, Integer> stringIntegerEntry : initLNAddressBalanceMap.entrySet()) {
             System.out.println("address："+stringIntegerEntry.getKey() +", balance:"+stringIntegerEntry.getValue());
         }
-        //查询第一页（余额最多，一页前25名）地址及余额
+        //查询第一页（余额最多，一页前25名）owner及余额
         Map<String, Integer> Top25OwnerBalanceMap = new HashMap<>();
-        String responseHolders = LNFiPostHolders(TreatAssetId);
+        String responseHolders = LNFiPostHolders(LNAssetId);
         JsonObject jsonObjectHolders = JsonParser.parseString(responseHolders).getAsJsonObject();
         JsonArray asJsonArray = jsonObjectHolders.get("data").getAsJsonObject().get("data").getAsJsonArray();
         for (int i = 0; i < asJsonArray.size(); i++) {
@@ -81,12 +81,12 @@ public class LnfiMonitorAddress {
             try {
                 for (Map.Entry<String, String> entry : addressOwner.entrySet()) {
                     String owner = entry.getValue();
-                    String responseBalance = LNFiPostBalance(TreatAssetId, owner);
+                    String responseBalance = LNFiPostBalance(LNAssetId, owner);
                     JsonObject jsonObject = JsonParser.parseString(responseBalance).getAsJsonObject();
                     int balanceLatest = jsonObject.get("data").getAsJsonObject().get("data").getAsJsonObject().get("balance").getAsInt();
                     if (balanceLatest != initLNAddressBalanceMap.get(entry.getKey())) {
                         Start.readStr("有LNFI address 出现余额变动");
-                        System.out.println("有LNFI address 出现余额变动，balanceLatest:"+balanceLatest +",initBalance:"+initLNAddressBalanceMap.get(entry.getKey()));
+                        System.out.println("有LNFI address 出现余额变动，balanceLatest:"+balanceLatest +",initBalance:"+initLNAddressBalanceMap.get(entry.getKey())+",变化量:::::"+(balanceLatest-initLNAddressBalanceMap.get(entry.getKey())));
                     }
                     Thread.sleep(10000);
                 }
