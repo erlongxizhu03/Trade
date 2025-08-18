@@ -5,8 +5,11 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import java.io.*;
+import java.lang.invoke.VarHandle;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,12 +25,17 @@ public class $LNAddressMonitor {
      */
     public static Map<String, Integer> initLNAddressBalanceMap = new HashMap<>(36);//读取file
 
+    static SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
     public static void main(String[] args) {
         Map<String, String> addressOwner = new HashMap<>();
         initAddressOwner(addressOwner);
         while (true) {
             try {
                 String responseHolders = LNFiPostHolders(LNAssetId);
+                if (responseHolders.isEmpty()) {
+                    continue;
+                }
                 JsonObject jsonObjectHolders = JsonParser.parseString(responseHolders).getAsJsonObject();
                 JsonArray asJsonArray = jsonObjectHolders.get("data").getAsJsonObject().get("data").getAsJsonArray();
                 for (int i = 0; i < asJsonArray.size(); i++) {
@@ -37,10 +45,11 @@ public class $LNAddressMonitor {
 //                    System.out.println("owner:" + owner + ", balance:" + balance);
                     if (addressOwner.containsValue(owner)) {
                         Start.readStr("有监听地址出进入LN的top25");
+                        Start.showMsg("有监听地址出进入LN的top25");
                         System.out.println("owner:" + owner + ", balance:" + balance);
                     }
                 }
-                Thread.sleep(60000);
+                Thread.sleep(600000);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
@@ -213,7 +222,8 @@ public class $LNAddressMonitor {
             }
 
             int responseCode = con.getResponseCode();
-            System.out.println("Response Code : " + responseCode);
+
+            System.out.println(format.format(new Date())+",Response Code : " + responseCode);
             BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
             String inputLine;
             StringBuffer response = new StringBuffer();
